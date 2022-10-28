@@ -1,3 +1,5 @@
+import { useState } from 'react'; // react 내장 훅
+
 /**
  * @param {String}   title
  * @param {function} onChangeMode
@@ -33,11 +35,11 @@ function Nav(props) {
     let topic = topics[i];
     list.push(<li key={topic.id}>
       <a
-        id={topic.id} // a태그에 id값 부여
+        id={topic.id} // a태그에 id값 부여 => 태그의 속성으로 넘기면 자동형변환(->String)됨
         href={'/read/' + topic.id}
         onClick={event => { // {SyntheticBaseEvent} attributes 중 {DOMEventTarget}target 제공
           event.preventDefault(); // 클릭해도 reload되지 않음
-          onChangeMode(event.target.id); // event.target = 이벤트 유발시킨 태그 = a 태그
+          onChangeMode(Number(event.target.id)); // event.target = 이벤트 유발시킨 태그 = a 태그 // 형변환 처리(String->Number)
         }}
       >
         { topic.title }
@@ -65,6 +67,16 @@ function Article(props) {
 }
 
 function App() {
+  /**
+   * useState
+   * @param           state 초기값
+   * @returns {Array} #0: 상태값 / #1: 상태값 변경 함수
+   */
+  // const _mode = useState('WELCOME');
+  // const mode = _mode[0];
+  // const setMode = _mode[1];
+  const [ mode, setMode ] = useState('Welcome');
+  const [ id, setId ] = useState(null);
   const topics = [
     {
       id: 1,
@@ -83,15 +95,24 @@ function App() {
     },
   ];
 
+  let content = null;
+  if (mode === 'WELCOME') {
+    content = <Article title="Welcome" body="Hello, WEB"></Article>
+  } else if (mode === 'READ') {
+    const topic = topics.find((topic) => topic.id === id);
+    content = <Article title={topic.title} body={topic.body}></Article>
+  }
+
   return (
     <div>
       <Header title="React" onChangeMode={() => {
-        alert('Header');
+        setMode('WELCOME');
       }}></Header>
-      <Nav topics={topics} onChangeMode={(id) => {
-        alert(id);
+      <Nav topics={topics} onChangeMode={(_id) => {
+        setMode('READ');
+        setId(_id)
       }}></Nav>
-      <Article title="Welcome" body="Hello, WEB"></Article>
+      { content }
     </div>
   );
 }
