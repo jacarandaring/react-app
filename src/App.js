@@ -38,7 +38,7 @@ function Nav(props) {
         id={topic.id} // a태그에 id값 부여 => 태그의 속성으로 넘기면 자동형변환(->String)됨
         href={'/read/' + topic.id}
         onClick={event => { // {SyntheticBaseEvent} attributes 중 {DOMEventTarget}target 제공
-          event.preventDefault(); // 클릭해도 reload되지 않음
+          event.preventDefault(); // 클릭해도 a태그의 기본 동작인 reload 및 request URL 변경 불가 처리
           onChangeMode(Number(event.target.id)); // event.target = 이벤트 유발시킨 태그 = a 태그 // 형변환 처리(String->Number)
         }}
       >
@@ -66,6 +66,22 @@ function Article(props) {
   </article>
 }
 
+function Create(props) {
+  return <article>
+    <h2>Create</h2>
+    <form onSubmit={event => {
+      event.preventDefault(); // 기본 동작인 reload 불가 처리
+      const title = event.target.title.value;
+      const body = event.target.body.value;
+      props.onCreate(title, body); // form에 입력된 항목 전달
+    }}>
+      <p><input type="text" name="title" placeholder='title'></input></p>
+      <p><textarea name="body" placeholder='body'></textarea></p>
+      <p><input type="submit" value="Create"></input></p>
+    </form>
+  </article>
+}
+
 function App() {
   /**
    * useState
@@ -75,9 +91,10 @@ function App() {
   // const _mode = useState('WELCOME');
   // const mode = _mode[0];
   // const setMode = _mode[1];
-  const [ mode, setMode ] = useState('Welcome');
+  const [ mode, setMode ] = useState('WELCOME');
   const [ id, setId ] = useState(null);
-  const topics = [
+  const [ nextId, setNextId ] = useState(4);
+  const [ topics, setTopics] = useState([
     {
       id: 1,
       title: 'html',
@@ -93,7 +110,7 @@ function App() {
       title: 'js',
       body: 'js is ...',
     },
-  ];
+  ]);
 
   let content = null;
   if (mode === 'WELCOME') {
@@ -101,6 +118,24 @@ function App() {
   } else if (mode === 'READ') {
     const topic = topics.find((topic) => topic.id === id);
     content = <Article title={topic.title} body={topic.body}></Article>
+  } else if (mode === 'CREATE') {
+    content = <Create onCreate={(title, body) => {
+      // Object 타입 state 설정 방법 - state 변경ONLY 
+      // 1. 설정 대상 복제
+      const newTopics = [...topics];
+      // 2. 복제본에 변경 반영
+      newTopics.push({
+        id: nextId,
+        title,
+        body,
+      });
+      // 3. 복제본을 설정
+      setTopics(newTopics);
+
+      setMode('READ');
+      setId(nextId);
+      setNextId(nextId + 1);
+    }}></Create>
   }
 
   return (
@@ -113,6 +148,10 @@ function App() {
         setId(_id)
       }}></Nav>
       { content }
+      <a href="/create" onClick={event => {
+        event.preventDefault(); // 클릭해도 a태그의 기본 동작인 reload 및 request URL 변경 불가 처리
+        setMode('CREATE');
+      }}>Create</a>
     </div>
   );
 }
