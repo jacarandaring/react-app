@@ -82,6 +82,40 @@ function Create(props) {
   </article>
 }
 
+function Update(props) {
+  const [ title, setTitle ] = useState(props.topic.title);
+  const [ body, setBody ] = useState(props.topic.body);
+
+  return <article>
+    <h2>Update</h2>
+    <form onSubmit={event => {
+      event.preventDefault(); // 기본 동작인 reload 불가 처리
+      const title = event.target.title.value;
+      const body = event.target.body.value;
+      props.onUpdate(title, body); // form에 입력된 항목 전달
+    }}>
+      <p>
+        {/*
+          * [onChange함수]
+          * HTML: blur
+          * React: change
+          */}
+        <input type="text" name="title" value={title} placeholder='title' onChange={event => {
+          setTitle(event.target.value);
+        }}></input>
+      </p>
+      <p>
+        <textarea name="body" value={body} placeholder='body' onChange={event => {
+          setBody(event.target.value);
+        }}></textarea>
+      </p>
+      <p>
+        <input type="submit" value="Update"></input>
+      </p>
+    </form>
+  </article>
+}
+
 function App() {
   /**
    * useState
@@ -113,11 +147,32 @@ function App() {
   ]);
 
   let content = null;
+  let contextCtrl = null;
   if (mode === 'WELCOME') {
     content = <Article title="Welcome" body="Hello, WEB"></Article>
   } else if (mode === 'READ') {
     const topic = topics.find((topic) => topic.id === id);
     content = <Article title={topic.title} body={topic.body}></Article>
+
+    contextCtrl = <>
+      <li>
+        <a href={`/update/${topic.id}`} onClick={event => {
+          event.preventDefault();
+          setMode('UPDATE');
+        }}>Update</a>
+      </li>
+      <li>
+        <input type="button" value="Delete" onClick={() => {
+          // (버튼 태그 기본 동작 없음)
+          const newTopics = [...topics];
+          const index = newTopics.findIndex((topic) => topic.id === id);
+          newTopics.splice(index, 1);
+          setTopics(newTopics);
+          setId(newTopics[0].id); // topics 미반영
+          setMode('WELCOME');
+        }}></input>
+      </li>
+    </>
   } else if (mode === 'CREATE') {
     content = <Create onCreate={(title, body) => {
       // Object 타입 state 설정 방법 - state 변경ONLY 
@@ -136,6 +191,19 @@ function App() {
       setId(nextId);
       setNextId(nextId + 1);
     }}></Create>
+  } else if (mode === 'UPDATE') {
+    const topic = topics.find((topic) => topic.id === id);
+    content = <Update topic={topic} onUpdate={(title, body) => {
+      const newTopics = [...topics];
+      const index = newTopics.findIndex((topic) => topic.id === id);
+      newTopics.splice(index, 1, {
+        id,
+        title,
+        body,
+      });
+      setTopics(newTopics);
+      setMode('READ');
+    }}></Update>
   }
 
   return (
@@ -148,10 +216,15 @@ function App() {
         setId(_id)
       }}></Nav>
       { content }
-      <a href="/create" onClick={event => {
-        event.preventDefault(); // 클릭해도 a태그의 기본 동작인 reload 및 request URL 변경 불가 처리
-        setMode('CREATE');
-      }}>Create</a>
+      <ul>
+        <li>
+          <a href="/create" onClick={event => {
+            event.preventDefault(); // 클릭해도 a태그의 기본 동작인 reload 및 request URL 변경 불가 처리
+            setMode('CREATE');
+          }}>Create</a>
+        </li>
+        { contextCtrl }
+      </ul>
     </div>
   );
 }
